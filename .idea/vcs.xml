@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/build/arm64/dep_wxWidgets-prefix/src/dep_wxWidgets" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/build/arm64/dep_wxWidgets-prefix/src/dep_wxWidgets/3rdparty/catch" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/build/arm64/dep_wxWidgets-prefix/src/dep_wxWidgets/src/expat" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/build/arm64/dep_wxWidgets-prefix/src/dep_wxWidgets/src/jpeg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/build/arm64/dep_wxWidgets-prefix/src/dep_wxWidgets/src/png" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/build/arm64/dep_wxWidgets-prefix/src/dep_wxWidgets/src/tiff" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/build/arm64/dep_wxWidgets-prefix/src/dep_wxWidgets/src/zlib" vcs="Git" />
+  </component>
+</project>
