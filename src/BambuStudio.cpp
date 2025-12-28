@@ -7838,7 +7838,8 @@ bool CLI::setup(int argc, char **argv)
         for (const t_optiondef_map::value_type &optdef : *options)
             m_config.option(optdef.first, true);
 
-    //set_data_dir(m_config.opt_string("datadir"));
+    // Enable datadir support for isolated development environments
+    set_data_dir(m_config.opt_string("datadir"));
 
     //FIXME Validating at this stage most likely does not make sense, as the config is not fully initialized yet.
     if (!validity.empty()) {

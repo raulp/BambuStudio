@@ -4197,6 +4197,39 @@ void PrintConfigDef::init_fff_params()
     def->mode    = comAdvanced;
     def->set_default_value(new ConfigOptionInt(10));
 
+    // Resonance avoidance feature
+    // Adjusts outer wall print speeds to avoid printer resonance frequencies that cause ringing artifacts.
+    // Uses a bidirectional midpoint algorithm: speeds below the midpoint are clamped to min,
+    // speeds above midpoint are boosted to max, avoiding the resonance zone entirely.
+    def          = this->add("resonance_avoidance", coBools);
+    def->label   = L("Resonance avoidance");
+    def->category = L("Speed");
+    def->tooltip = L("Adjust outer wall speed to avoid printer resonance zones, reducing ringing or VFA.\n"
+                     "Enable this option and configure min/max speed range to activate.\n"
+                     "Disable when calibrating for ringing.");
+    def->mode    = comSimple;
+    def->set_default_value(new ConfigOptionBools{ false });
+
+    def           = this->add("min_resonance_avoidance_speed", coFloats);
+    def->label    = L("Min speed");
+    def->category = L("Speed");
+    def->tooltip  = L("Minimum speed of resonance zone. Speeds below midpoint clamped to this.\n"
+                      "Must be greater than 0 and less than max speed.");
+    def->sidetext = L("mm/s");
+    def->min      = 0;
+    def->mode     = comSimple;
+    def->set_default_value(new ConfigOptionFloats{ 0 });
+
+    def           = this->add("max_resonance_avoidance_speed", coFloats);
+    def->label    = L("Max speed");
+    def->category = L("Speed");
+    def->tooltip  = L("Maximum speed of resonance zone. Speeds above midpoint boosted to this.\n"
+                      "Must be greater than min speed.");
+    def->sidetext = L("mm/s");
+    def->min      = 0;
+    def->mode     = comSimple;
+    def->set_default_value(new ConfigOptionFloats{ 0 });
+
     def          = this->add("seam_slope_inner_walls", coBool);
     def->label   = L("Scarf joint for inner walls");
     def->category = L("Quality");
@@ -6433,7 +6466,10 @@ std::set<std::string> printer_extruder_options = {
     "extruder_printable_height",
     "min_layer_height",
     "max_layer_height",
-    "extruder_max_nozzle_count"
+    "extruder_max_nozzle_count",
+    "resonance_avoidance",
+    "min_resonance_avoidance_speed",
+    "max_resonance_avoidance_speed"
 };
 
 std::set<std::string> printer_options_with_variant_1 = {
@@ -8377,6 +8413,30 @@ std::map<std::string, std::string> validate(const FullPrintConfig &cfg, bool und
         }
     }
 
+    // Validate resonance avoidance settings
+    // This validation runs during slicing/export to catch configuration errors.
+    // Note: UI-level validation in Tab.cpp provides earlier feedback when saving presets.
+    for (size_t i = 0; i < cfg.resonance_avoidance.values.size(); ++i) {
+        if (cfg.resonance_avoidance.get_at(i)) {
+            double min_speed = cfg.min_resonance_avoidance_speed.get_at(i);
+            double max_speed = cfg.max_resonance_avoidance_speed.get_at(i);
+
+            // Both speeds must be configured (non-zero) when feature is enabled
+            if (min_speed == 0 || max_speed == 0) {
+                error_message.emplace("min_resonance_avoidance_speed",
+                    L("Resonance avoidance is enabled but min/max speeds are not configured (cannot be 0)"));
+                break;
+            }
+            // Min must be less than max to define a valid range
+            if (min_speed >= max_speed) {
+                error_message.emplace("min_resonance_avoidance_speed",
+                    L("Min resonance speed must be less than max speed (min: ") +
+                    std::to_string(min_speed) + L(", max: ") + std::to_string(max_speed) + L(")"));
+                break;
+            }
+        }
+    }
+
     // The configuration is valid.
     return error_message;
 }
@@ -8681,6 +8741,13 @@ CLITransformConfigDef::CLITransformConfigDef()
 CLIMiscConfigDef::CLIMiscConfigDef()
 {
     ConfigOptionDef* def;
+
+    // Add datadir support for isolated development environments
+    def = this->add("datadir", coString);
+    def->label = "Data directory";
+    def->tooltip = "Use custom data directory for configuration, profiles, and cache";
+    def->cli_params = "path";
+    def->set_default_value(new ConfigOptionString(""));
 
     /*def = this->add("ignore_nonexistent_config", coBool);
     def->label = L("Ignore non-existent config files");

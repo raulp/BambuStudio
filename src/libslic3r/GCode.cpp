@@ -6064,6 +6064,35 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
         speed = std::min(speed, extrude_speed);
     }
 
+    // Resonance avoidance for external perimeters
+    // Adjusts outer wall speeds to avoid printer resonance frequencies that cause ringing.
+    //
+    // Algorithm (bidirectional midpoint adjustment):
+    //   1. If speed is below resonance zone max AND zone is valid (min < max):
+    //      - Calculate midpoint of resonance zone
+    //      - Speeds below midpoint: clamp DOWN to min (safe zone below resonance)
+    //      - Speeds above midpoint: boost UP to max (safe zone above resonance)
+    //   2. Speeds >= max_avoid are left unchanged (already above resonance)
+    //
+    // This is stateless - no flags or state variables needed. Each path segment is
+    // evaluated independently based on its target speed.
+    if (path.role() == erExternalPerimeter && EXTRUDER_CONFIG(resonance_avoidance)) {
+        const double min_avoid = EXTRUDER_CONFIG(min_resonance_avoidance_speed);
+        const double max_avoid = EXTRUDER_CONFIG(max_resonance_avoidance_speed);
+
+        if (speed < max_avoid && max_avoid > min_avoid) {
+            const double midpoint = min_avoid + ((max_avoid - min_avoid) / 2.0);
+
+            if (speed < midpoint) {
+                // Lower half of resonance range: clamp down to safe minimum
+                speed = std::min(speed, min_avoid);
+            } else {
+                // Upper half of resonance range: boost up to safe maximum
+                speed = max_avoid;
+            }
+        }
+    }
+
     if (do_slowdown_by_height)
         speed = std::min(speed, desiredMaxSpeed);
     double F = speed * 60;  // convert mm/sec to mm/min

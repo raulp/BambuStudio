@@ -4651,6 +4651,20 @@ PageShp TabPrinter::build_kinematics_page()
             append_option_line(optgroup, "machine_max_jerk_" + axis);
         }
 
+    // Resonance avoidance UI section
+    // Creates enable checkbox and min/max speed range inputs.
+    // Speed range visibility is controlled by toggle_options() based on checkbox state.
+    optgroup = page->new_optgroup(L("Resonance Avoidance"));
+    Line ra_enable_line = optgroup->create_single_option_line("resonance_avoidance");
+    optgroup->append_line(ra_enable_line);
+
+    Line resonance_line = {L("Speed Range"), ""};
+    Option min_option = optgroup->get_option("min_resonance_avoidance_speed");
+    min_option.opt.width = Field::def_width_wider();  // Extra width for better spacing before Max field
+    resonance_line.append_option(min_option);
+    resonance_line.append_option(optgroup->get_option("max_resonance_avoidance_speed"));
+    optgroup->append_line(resonance_line);
+
     //optgroup = page->new_optgroup(L("Minimum feedrates"));
     //    append_option_line(optgroup, "machine_min_extruding_rate");
     //    append_option_line(optgroup, "machine_min_travel_rate");
@@ -5163,6 +5177,10 @@ void TabPrinter::toggle_options()
             "machine_min_extruding_rate", "machine_min_travel_rate" })
             for (int i = 0; i < max_field; ++ i)
 	            toggle_option(opt, !is_BBL_printer, i);
+
+        // Show/hide resonance avoidance speed range based on enable checkbox
+        bool ra_enabled = m_config->opt_bool("resonance_avoidance", 0);
+        toggle_line("Speed Range", ra_enabled);
     }
 
     toggle_line("fan_direction", m_config->opt_bool("auxiliary_fan"));
@@ -6160,6 +6178,26 @@ void Tab::compare_preset()
 //BBS: add project embedded preset relate logic
 void Tab::save_preset(std::string name /*= ""*/, bool detach, bool save_to_project, bool from_input, std::string input_name )
 {
+    // Validate resonance avoidance settings before saving (printer presets only)
+    // This provides immediate user feedback when clicking save, preventing invalid configurations.
+    // Validation runs regardless of enable checkbox state to catch partially-configured settings.
+    if (m_type == Preset::TYPE_PRINTER) {
+        double min_speed = m_config->opt_float("min_resonance_avoidance_speed", 0);
+        double max_speed = m_config->opt_float("max_resonance_avoidance_speed", 0);
+
+        // If either value is set, both must be valid
+        if (min_speed != 0 || max_speed != 0) {
+            if (min_speed == 0 || max_speed == 0) {
+                show_error(m_parent, _L("Cannot save: Both min and max resonance speeds must be set (cannot be 0) or both must be 0"));
+                return;
+            }
+            if (min_speed >= max_speed) {
+                show_error(m_parent, wxString::Format(_L("Cannot save: Min speed (%g) must be less than max speed (%g)"), min_speed, max_speed));
+                return;
+            }
+        }
+    }
+
     // since buttons(and choices too) don't get focus on Mac, we set focus manually
     // to the treectrl so that the EVT_* events are fired for the input field having
     // focus currently.is there anything better than this ?

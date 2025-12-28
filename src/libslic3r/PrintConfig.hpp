@@ -1044,6 +1044,11 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloatsNullable,       machine_min_travel_rate))
     // M205 S... [mm/sec]
     ((ConfigOptionFloatsNullable,       machine_min_extruding_rate))
+
+    // Resonance avoidance: adjusts outer wall speeds to avoid resonance frequencies
+    ((ConfigOptionBools,                resonance_avoidance))
+    ((ConfigOptionFloats,               min_resonance_avoidance_speed))
+    ((ConfigOptionFloats,               max_resonance_avoidance_speed))
 )
 
 // This object is mapped to Perl as Slic3r::Config::GCode.
