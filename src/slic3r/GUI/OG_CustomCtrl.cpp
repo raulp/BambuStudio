@@ -690,8 +690,13 @@ void OG_CustomCtrl::CtrlLine::update_visibility(ConfigOptionMode mode)
         return;
     const std::vector<Option>& option_set = og_line.get_options();
 
-    const ConfigOptionMode& line_mode = option_set.front().opt.mode;
-    is_visible = og_line.toggle_visible && line_mode <= mode;
+    // If this line has no options (pure widget line), just honor toggle_visible.
+    if (option_set.empty()) {
+        is_visible = og_line.toggle_visible;
+    } else {
+        const ConfigOptionMode& line_mode = option_set.front().opt.mode;
+        is_visible = og_line.toggle_visible && line_mode <= mode;
+    }
 
     if (draw_just_act_buttons)
         return;
@@ -740,7 +745,10 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord h_pos, wxCoord v_pos)
         return;
     }
 
-    Field* field = ctrl->opt_group->get_field(og_line.get_options().front().opt_id);
+    const std::vector<Option>& option_set = og_line.get_options();
+    Field* field = nullptr;
+    if (!option_set.empty())
+        field = ctrl->opt_group->get_field(option_set.front().opt_id);
 
     bool suppress_hyperlinks = false;
     if (draw_just_act_buttons) {
@@ -755,22 +763,22 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord h_pos, wxCoord v_pos)
     if (og_line.near_label_widget_win)
         h_pos += og_line.near_label_widget_win->GetSize().x + ctrl->m_h_gap;
 
-    const std::vector<Option>& option_set = og_line.get_options();
-
     wxString label = og_line.label;
     wxColour blink_color = StateColor::darkModeColorFor("#00AE42");
     bool is_url_string = false;
     if (ctrl->opt_group->label_width != 0 && !label.IsEmpty()) {
         const wxColour* text_clr = field ? field->label_color() : og_line.full_Label_color;
-        for (const Option& opt : option_set) {
-            Field* field = ctrl->opt_group->get_field(opt.opt_id);
-            if (field && field->blink()) {
-                text_clr = &blink_color;
-                break;
+        if (!option_set.empty()) {
+            for (const Option& opt : option_set) {
+                Field* field = ctrl->opt_group->get_field(opt.opt_id);
+                if (field && field->blink()) {
+                    text_clr = &blink_color;
+                    break;
+                }
             }
         }
         bool is_multi_extruder = false;
-        if (ctrl->opt_group->draw_multi_extruder)
+        if (ctrl->opt_group->draw_multi_extruder && !option_set.empty())
             for (const Option& opt : option_set)
                 is_multi_extruder |= opt.opt_id.find_last_of('#') != std::string::npos;
         wxCoord icon_pos = h_pos;

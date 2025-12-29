@@ -4205,30 +4205,23 @@ void PrintConfigDef::init_fff_params()
     def->label   = L("Resonance avoidance");
     def->category = L("Speed");
     def->tooltip = L("Adjust outer wall speed to avoid printer resonance zones, reducing ringing or VFA.\n"
-                     "Enable this option and configure min/max speed range to activate.\n"
+                     "Enable this option and configure zones to activate.\n"
                      "Disable when calibrating for ringing.");
     def->mode    = comSimple;
     def->set_default_value(new ConfigOptionBools{ false });
 
-    def           = this->add("min_resonance_avoidance_speed", coFloats);
-    def->label    = L("Min speed");
+    // Multi-zone resonance avoidance
+    // Stores interleaved min-max pairs: [min1, max1, min2, max2, ...]
+    def           = this->add("resonance_avoidance_zones", coFloats);
+    def->label    = L("Resonance zones");
     def->category = L("Speed");
-    def->tooltip  = L("Minimum speed of resonance zone. Speeds below midpoint clamped to this.\n"
-                      "Must be greater than 0 and less than max speed.");
+    def->tooltip  = L("Speed ranges to avoid, in min-max pairs.\n"
+                      "Example: 70-120 and 150-180 mm/s.\n"
+                      "Use the dynamic UI in Printer Settings to manage zones.");
     def->sidetext = L("mm/s");
     def->min      = 0;
     def->mode     = comSimple;
-    def->set_default_value(new ConfigOptionFloats{ 0 });
-
-    def           = this->add("max_resonance_avoidance_speed", coFloats);
-    def->label    = L("Max speed");
-    def->category = L("Speed");
-    def->tooltip  = L("Maximum speed of resonance zone. Speeds above midpoint boosted to this.\n"
-                      "Must be greater than min speed.");
-    def->sidetext = L("mm/s");
-    def->min      = 0;
-    def->mode     = comSimple;
-    def->set_default_value(new ConfigOptionFloats{ 0 });
+    def->set_default_value(new ConfigOptionFloats{});  // Empty = no zones
 
     def          = this->add("seam_slope_inner_walls", coBool);
     def->label   = L("Scarf joint for inner walls");
@@ -6467,9 +6460,7 @@ std::set<std::string> printer_extruder_options = {
     "min_layer_height",
     "max_layer_height",
     "extruder_max_nozzle_count",
-    "resonance_avoidance",
-    "min_resonance_avoidance_speed",
-    "max_resonance_avoidance_speed"
+    "resonance_avoidance"
 };
 
 std::set<std::string> printer_options_with_variant_1 = {
@@ -8413,26 +8404,48 @@ std::map<std::string, std::string> validate(const FullPrintConfig &cfg, bool und
         }
     }
 
-    // Validate resonance avoidance settings
-    // This validation runs during slicing/export to catch configuration errors.
-    // Note: UI-level validation in Tab.cpp provides earlier feedback when saving presets.
+    // Validate multi-zone resonance avoidance
+    // Zones are stored as interleaved min-max pairs: [min1, max1, min2, max2, ...]
     for (size_t i = 0; i < cfg.resonance_avoidance.values.size(); ++i) {
         if (cfg.resonance_avoidance.get_at(i)) {
-            double min_speed = cfg.min_resonance_avoidance_speed.get_at(i);
-            double max_speed = cfg.max_resonance_avoidance_speed.get_at(i);
+            // Get zones for this extruder (per-extruder config)
+            const auto& zones = cfg.resonance_avoidance_zones.values;
 
-            // Both speeds must be configured (non-zero) when feature is enabled
-            if (min_speed == 0 || max_speed == 0) {
-                error_message.emplace("min_resonance_avoidance_speed",
-                    L("Resonance avoidance is enabled but min/max speeds are not configured (cannot be 0)"));
-                break;
-            }
-            // Min must be less than max to define a valid range
-            if (min_speed >= max_speed) {
-                error_message.emplace("min_resonance_avoidance_speed",
-                    L("Min resonance speed must be less than max speed (min: ") +
-                    std::to_string(min_speed) + L(", max: ") + std::to_string(max_speed) + L(")"));
-                break;
+            if (!zones.empty()) {
+                // Must have even number of values (pairs)
+                if (zones.size() % 2 != 0) {
+                    error_message.emplace("resonance_avoidance_zones",
+                        L("Resonance zones must be in min-max pairs (even number of values)"));
+                    break;
+                }
+
+                // Validate each zone pair
+                for (size_t j = 0; j < zones.size(); j += 2) {
+                    if (j + 1 >= zones.size()) {
+                        break;
+                    }
+
+                    double min_speed = zones[j];
+                    double max_speed = zones[j + 1];
+
+                    // Both must be positive
+                    if (min_speed <= 0 || max_speed <= 0) {
+                        error_message.emplace("resonance_avoidance_zones",
+                            L("Zone speeds must be greater than 0 (zone ") +
+                            std::to_string(j/2 + 1) + L(")"));
+                        break;
+                    }
+
+                    // Min must be less than max
+                    if (min_speed >= max_speed) {
+                        error_message.emplace("resonance_avoidance_zones",
+                            L("Zone min must be less than max (zone ") +
+                            std::to_string(j/2 + 1) + L(": min=") +
+                            std::to_string(min_speed) + L(", max=") +
+                            std::to_string(max_speed) + L(")"));
+                        break;
+                    }
+                }
             }
         }
     }
@@ -8742,10 +8755,17 @@ CLIMiscConfigDef::CLIMiscConfigDef()
 {
     ConfigOptionDef* def;
 
-    // Add datadir support for isolated development environments
+    // Original datadir option (kept for compatibility, currently unused)
     def = this->add("datadir", coString);
     def->label = "Data directory";
     def->tooltip = "Use custom data directory for configuration, profiles, and cache";
+    def->cli_params = "path";
+    def->set_default_value(new ConfigOptionString(""));
+
+    // Development-only: custom data directory (not for production use)
+    def = this->add("dev-data-dir", coString);
+    def->label = "Dev data directory";
+    def->tooltip = "Development only: Use custom data directory for configuration, profiles, and cache";
     def->cli_params = "path";
     def->set_default_value(new ConfigOptionString(""));
 

@@ -7838,8 +7838,13 @@ bool CLI::setup(int argc, char **argv)
         for (const t_optiondef_map::value_type &optdef : *options)
             m_config.option(optdef.first, true);
 
-    // Enable datadir support for isolated development environments
-    set_data_dir(m_config.opt_string("datadir"));
+    //set_data_dir(m_config.opt_string("datadir"));
+
+    // Development-only: Allow custom data directory via --dev-data-dir
+    std::string dev_data_dir = m_config.opt_string("dev-data-dir");
+    if (!dev_data_dir.empty()) {
+        set_data_dir(dev_data_dir);
+    }
 
     //FIXME Validating at this stage most likely does not make sense, as the config is not fully initialized yet.
     if (!validity.empty()) {

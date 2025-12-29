@@ -4652,18 +4652,66 @@ PageShp TabPrinter::build_kinematics_page()
         }
 
     // Resonance avoidance UI section
-    // Creates enable checkbox and min/max speed range inputs.
-    // Speed range visibility is controlled by toggle_options() based on checkbox state.
     optgroup = page->new_optgroup(L("Resonance Avoidance"));
     Line ra_enable_line = optgroup->create_single_option_line("resonance_avoidance");
     optgroup->append_line(ra_enable_line);
 
-    Line resonance_line = {L("Speed Range"), ""};
-    Option min_option = optgroup->get_option("min_resonance_avoidance_speed");
-    min_option.opt.width = Field::def_width_wider();  // Extra width for better spacing before Max field
-    resonance_line.append_option(min_option);
-    resonance_line.append_option(optgroup->get_option("max_resonance_avoidance_speed"));
-    optgroup->append_line(resonance_line);
+    // Create resonance zones widget
+    m_resonance_zones = new ResonanceZones(page->parent());
+    m_resonance_zones->set_on_change([this]() {
+        update_dirty();
+        update();
+    });
+    m_resonance_zones->set_on_empty([this]() {
+        if (m_config) {
+            m_config->set_key_value("resonance_avoidance", new ConfigOptionBools{false});
+            Field* field = get_field("resonance_avoidance");
+            if (field) {
+                field->set_value(boost::any(false), false);
+            }
+            update_dirty();
+            update();
+        }
+    });
+    m_resonance_zones->Hide();
+
+    // Add as a custom widget line within the optgroup
+    Line zones_line{L("Speed Range"), ""};
+    zones_line.full_width = 1;       // span the content area
+    zones_line.toggle_visible = false; // start hidden until the checkbox is enabled
+    zones_line.widget = [this](wxWindow* parent) -> wxSizer* {
+        auto sizer = new wxBoxSizer(wxHORIZONTAL);
+
+        // Recreate widget if it was destroyed (e.g., after page clear)
+        if (!m_resonance_zones) {
+            m_resonance_zones = new ResonanceZones(parent);
+            m_resonance_zones->set_on_change([this]() {
+                update_dirty();
+                update();
+            });
+            m_resonance_zones->set_on_empty([this]() {
+                if (m_config) {
+                    m_config->set_key_value("resonance_avoidance", new ConfigOptionBools{false});
+                    Field* field = get_field("resonance_avoidance");
+                    if (field) {
+                        field->set_value(boost::any(false), false);
+                    }
+                    update_dirty();
+                    update();
+                }
+            });
+        }
+        // Reparent if needed (parent changes during page rebuilds)
+        else if (m_resonance_zones->GetParent() != parent) {
+            m_resonance_zones->Reparent(parent);
+        }
+
+        sizer->AddSpacer(wxGetApp().em_unit() * 2);
+        sizer->Add(m_resonance_zones, 0, wxEXPAND | wxTOP, wxGetApp().em_unit());
+
+        return sizer;
+    };
+    optgroup->append_line(zones_line);
 
     //optgroup = page->new_optgroup(L("Minimum feedrates"));
     //    append_option_line(optgroup, "machine_min_extruding_rate");
@@ -5030,6 +5078,10 @@ void TabPrinter::clear_pages()
 {
     Tab::clear_pages();
     m_reset_to_filament_color = nullptr;
+
+    // Widget is destroyed automatically by wxWidgets when pages are cleared
+    // Just reset the pointer to prevent dangling reference
+    m_resonance_zones = nullptr;
 }
 
 void TabPrinter::toggle_options()
@@ -5178,9 +5230,15 @@ void TabPrinter::toggle_options()
             for (int i = 0; i < max_field; ++ i)
 	            toggle_option(opt, !is_BBL_printer, i);
 
-        // Show/hide resonance avoidance speed range based on enable checkbox
-        bool ra_enabled = m_config->opt_bool("resonance_avoidance", 0);
-        toggle_line("Speed Range", ra_enabled);
+        // Update resonance zones widget
+        if (m_resonance_zones) {
+            bool ra_enabled = m_config->opt_bool("resonance_avoidance", 0);
+            auto zones = m_config->opt<ConfigOptionFloats>("resonance_avoidance_zones");
+
+            // set_extruder() calls reload_from_config() internally, no need to call reload() again
+            m_resonance_zones->set_extruder(0, zones, ra_enabled);
+            toggle_line("Speed Range", ra_enabled);
+        }
     }
 
     toggle_line("fan_direction", m_config->opt_bool("auxiliary_fan"));
@@ -6178,23 +6236,25 @@ void Tab::compare_preset()
 //BBS: add project embedded preset relate logic
 void Tab::save_preset(std::string name /*= ""*/, bool detach, bool save_to_project, bool from_input, std::string input_name )
 {
-    // Validate resonance avoidance settings before saving (printer presets only)
-    // This provides immediate user feedback when clicking save, preventing invalid configurations.
-    // Validation runs regardless of enable checkbox state to catch partially-configured settings.
+    // Validate and sort resonance zones FIRST, before showing any dialogs
     if (m_type == Preset::TYPE_PRINTER) {
-        double min_speed = m_config->opt_float("min_resonance_avoidance_speed", 0);
-        double max_speed = m_config->opt_float("max_resonance_avoidance_speed", 0);
+        TabPrinter* printer_tab = static_cast<TabPrinter*>(this);
+        auto* zones = printer_tab->get_resonance_zones();
+        if (zones && zones->has_zones()) {
+            auto errors = zones->validate_all_zones();
+            if (!errors.empty()) {
+                // Build error message
+                wxString error_msg = _L("Cannot save preset: Resonance zones have errors:\n\n");
+                for (const auto& error : errors) {
+                    error_msg += wxString::Format(_L("Row %zu: %s\n"), error.zone_index + 1, error.error_message);
+                }
 
-        // If either value is set, both must be valid
-        if (min_speed != 0 || max_speed != 0) {
-            if (min_speed == 0 || max_speed == 0) {
-                show_error(m_parent, _L("Cannot save: Both min and max resonance speeds must be set (cannot be 0) or both must be 0"));
+                MessageDialog(parent(), error_msg, _L("Validation Error"), wxICON_ERROR | wxOK).ShowModal();
                 return;
             }
-            if (min_speed >= max_speed) {
-                show_error(m_parent, wxString::Format(_L("Cannot save: Min speed (%g) must be less than max speed (%g)"), min_speed, max_speed));
-                return;
-            }
+
+            // Sort zones before saving to disk
+            zones->sort_and_save_zones();
         }
     }
 
@@ -6922,7 +6982,7 @@ NozzleVolumeType Tab::get_actual_nozzle_volume_type(int extruder_id)
     int extruder_count = m_preset_bundle->get_printer_extruder_count();
     auto nozzle_volumes = m_preset_bundle->project_config.option<ConfigOptionEnumsGeneric>("nozzle_volume_type");
     if (extruder_count == 1) {
-        if (extruder_id < 0) 
+        if (extruder_id < 0)
             return NozzleVolumeType::nvtStandard;
 
         return NozzleVolumeType(nozzle_volumes->values[extruder_id]);
