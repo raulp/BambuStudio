@@ -347,6 +347,11 @@ namespace Slic3r
                     export_image(m_p_tool_colors_texture, parent_path.wstring() + "/tool_colors.png");
                     break;
                 }
+                default:
+                {
+                    BOOST_LOG_TRIVIAL(warning) << "AdvancedRenderer::export_toolpaths_to_obj: Unhandled view type " << static_cast<int>(m_view_type) << " in export switch";
+                    break;
+                }
                 }
 
                 fprintf(fp, "\nnewmtl material_2\n");
@@ -633,8 +638,8 @@ namespace Slic3r
                     fprintf(fp, "vt %g %g \n", uv.x(), uv.y());
                 }
 
-                fprintf(fp, "\nusemtl material_%zu\n", 1);
-                fprintf(fp, "# triangles material %zu\n", 1);
+                fprintf(fp, "\nusemtl material_%d\n", 1);
+                fprintf(fp, "# triangles material %d\n", 1);
 
                 if (colored_indices.size()) {
                     for (int i = 0; i < colored_indices.size(); i += 3) {
@@ -646,8 +651,8 @@ namespace Slic3r
                 }
 
                 if (other_indices.size()) {
-                    fprintf(fp, "\nusemtl material_%zu\n", 2);
-                    fprintf(fp, "# triangles material %zu\n", 2);
+                    fprintf(fp, "\nusemtl material_%d\n", 2);
+                    fprintf(fp, "# triangles material %d\n", 2);
 
                     for (int i = 0; i < other_indices.size(); i += 3) {
                         size_t v1 = other_indices[i] + 1;
@@ -1231,6 +1236,11 @@ namespace Slic3r
                     break;
                 }
                 // end helio
+                default:
+                {
+                    BOOST_LOG_TRIVIAL(warning) << "AdvancedRenderer::render: Unhandled view type " << static_cast<int>(m_view_type) << " in texture binding switch";
+                    break;
+                }
                 }
 
                 for (size_t i = 0; i < layer_index_list.size(); ++i) {
@@ -2004,6 +2014,10 @@ namespace Slic3r
                     m_visible_segment_list.emplace_back(i_seg);
 
                     switch (t_seg.m_type) {
+                    case EMoveType::Noop:
+                    case EMoveType::Count:
+                        // No operation / sentinel value - do nothing
+                        break;
                     case EMoveType::Tool_change:
                     case EMoveType::Color_change:
                     case EMoveType::Pause_Print:
@@ -2623,8 +2637,12 @@ namespace Slic3r
                         continue;
                     }
                     const auto& t_seg = t_segments[t_segments_indices[j_seg - 1]];
-                
+
                     switch (t_seg.m_type) {
+                    case EMoveType::Noop:
+                    case EMoveType::Count:
+                        // No operation / sentinel value - do nothing
+                        break;
                     case EMoveType::Tool_change:
                     case EMoveType::Color_change:
                     case EMoveType::Pause_Print:

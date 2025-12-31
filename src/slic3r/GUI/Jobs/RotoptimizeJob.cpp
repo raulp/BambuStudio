@@ -52,7 +52,7 @@ void RotoptimizeJob::process()
         sla::RotOptimizeParams{}
             .accuracy(m_accuracy)
             .print_config(&m_default_print_cfg)
-            .statucb([this, &prev_status](int s)
+            .statucb([this](int s)
         {
             if (s > 0 && s < 100)
                 ;

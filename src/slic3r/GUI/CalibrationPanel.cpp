@@ -487,7 +487,7 @@ void CalibrationPanel::init_tabpanel() {
             selected = true;
         m_tabpanel->AddPage(m_cali_panels[i],
             get_calibration_type_name(m_cali_panels[i]->get_calibration_mode()),
-            "",
+            std::string(""),
             selected);
     }
 
@@ -598,18 +598,18 @@ void CalibrationPanel::show_status(int status)
 {
     if (!m_initialized) return;
     if (last_status == status)return;
-    if (last_status & (int)MonitorStatus::MONITOR_CONNECTING != 0) {
+    if ((last_status & (int)MonitorStatus::MONITOR_CONNECTING) != 0) {
         NetworkAgent* agent = wxGetApp().getAgent();
         json j;
         //j["dev_id"] = obj ? obj->get_dev_id() : "obj_nullptr";
         j["dev_id"] = "";
-        if (status & (int)MonitorStatus::MONITOR_DISCONNECTED != 0) {
+        if ((status & (int)MonitorStatus::MONITOR_DISCONNECTED) != 0) {
             j["result"] = "failed";
             if (agent) {
                 agent->track_event("connect_dev", j.dump());
             }
         }
-        else if (status & (int)MonitorStatus::MONITOR_NORMAL != 0) {
+        else if ((status & (int)MonitorStatus::MONITOR_NORMAL) != 0) {
             j["result"] = "success";
             if (agent) {
                 agent->track_event("connect_dev", j.dump());

@@ -781,7 +781,7 @@ void IMSlider::draw_tick_on_mouse_position(const ImRect& slideable_region) {
 
 void IMSlider::show_tooltip(const std::string tooltip) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 6 * m_scale, 3 * m_scale });
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, { 3 * m_scale });
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3 * m_scale);
     ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGuiWrapper::COL_WINDOW_BACKGROUND);
     ImGui::PushStyleColor(ImGuiCol_Border, { 0,0,0,0 });
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.00f, 1.00f, 1.00f, 1.00f));
@@ -1196,7 +1196,8 @@ void IMSlider::render_input_custom_gcode(std::string custom_gcode)
 }
 
 void IMSlider::do_go_to_layer(size_t layer_number) {
-    clamp((int)layer_number, m_min_value, m_max_value);
+    // clamp((int)layer_number, m_min_value, m_max_value);  // OLD: ignored return value - had no effect!
+    layer_number = clamp((int)layer_number, m_min_value, m_max_value);  // Actually use the clamped value
     GetSelection() == ssLower ? SetLowerValue(layer_number) : SetHigherValue(layer_number);
 }
 

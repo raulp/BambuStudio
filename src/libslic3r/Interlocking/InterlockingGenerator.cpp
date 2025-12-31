@@ -41,7 +41,7 @@ void InterlockingGenerator::generate_embedding_wall(PrintObject* print_object){
     //generator
     tbb::parallel_for(
         tbb::blocked_range<size_t>(0, print_object->layers().size()),
-        [print_object, beam_width, boundary_avoidance, cell_size, interface_dilation, air_dilation, air_filtering](const tbb::blocked_range<size_t>& range) {
+        [print_object, cell_size, interface_dilation, air_dilation](const tbb::blocked_range<size_t>& range) {
             for (size_t i = range.begin(); i != range.end(); ++i) {
                 Layer* layer = print_object->layers()[i];
                 if (layer->id() % 2 == 0)

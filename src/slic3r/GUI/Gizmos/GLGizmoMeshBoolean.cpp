@@ -1661,7 +1661,7 @@ GLGizmoMeshBoolean::GLGizmoMeshBoolean(GLCanvas3D& parent, unsigned int sprite_i
     };
 
     // Setup async callbacks
-    m_ui->is_async_enabled = [this]() -> bool {
+    m_ui->is_async_enabled = []() -> bool {
         return true; // Async is always enabled
     };
 

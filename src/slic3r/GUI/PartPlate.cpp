@@ -430,7 +430,7 @@ void PartPlate::calc_height_limit() {
 
 int PartPlate::get_right_icon_offset_bed(int i)
 {
-    if (&wxGetApp() && wxGetApp().plater()) {
+    if (wxGetApp().plater()) {
         auto offset = wxGetApp().plater()->get_right_icon_offset_bed(i);
         if (i > 0 && offset == 0) {
             return 0;
@@ -713,7 +713,7 @@ void PartPlate::show_tooltip(const std::string tooltip)
 {
     const auto scale = m_plater->get_current_canvas3D()->get_scale();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {6 * scale, 3 * scale});
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, {3 * scale});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3 * scale);
     ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGuiWrapper::COL_WINDOW_BACKGROUND);
     ImGui::PushStyleColor(ImGuiCol_Border, {0, 0, 0, 0});
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.00f, 1.00f, 1.00f, 1.00f));
@@ -3585,7 +3585,7 @@ void PartPlateList::generate_print_polygon(ExPolygon &print_polygon)
         }
     };
     bool use_rect_grid = false;
-    if (&wxGetApp() && wxGetApp().plater()) {
+    if (wxGetApp().plater()) {
         auto pm       = wxGetApp().plater()->get_curr_printer_model();
         use_rect_grid = (pm && pm->use_rect_grid == "true") ? true : false;
     }

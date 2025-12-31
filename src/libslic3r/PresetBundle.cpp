@@ -1378,7 +1378,7 @@ int PresetBundle::validate_presets(const std::string &file_name, DynamicPrintCon
 
 void PresetBundle::remove_users_preset(AppConfig &config, std::map<std::string, std::map<std::string, std::string>> *my_presets)
 {
-    auto check_removed = [my_presets, this](Preset &preset) -> bool {
+    auto check_removed = [my_presets](Preset &preset) -> bool {
         if (my_presets == nullptr) return true;
         if (my_presets->find(preset.name) != my_presets->end()) return false;
         if (!preset.sync_info.empty()) return false; // syncing, not remove
@@ -2277,7 +2277,7 @@ void PresetBundle::get_ams_cobox_infos(AMSComboInfo& combox_info)
                     combox_info.ams_names.push_back(ams_name);
                     continue;
                 }
-                iter = std::find_if(filaments.begin(), filaments.end(), [&filament_type](auto &f) { return f.is_compatible && f.is_system; });
+                iter = std::find_if(filaments.begin(), filaments.end(), [](auto &f) { return f.is_compatible && f.is_system; });
                 if (iter == filaments.end())
                     continue;
             }
@@ -4348,7 +4348,7 @@ std::pair<PresetsConfigSubstitutions, size_t> PresetBundle::load_vendor_configs_
     PresetCollection         *presets = nullptr;
     size_t                   presets_loaded = 0;
 
-    auto parse_subfile = [this, path, vendor_name, presets_loaded, current_vendor_profile](\
+    auto parse_subfile = [this, path, vendor_name, current_vendor_profile](\
         ConfigSubstitutionContext& substitution_context,
         PresetsConfigSubstitutions& substitutions,
         LoadConfigBundleAttributes& flags,

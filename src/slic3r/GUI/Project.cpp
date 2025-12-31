@@ -255,7 +255,7 @@ std::string ProjectPanel::get_model_id(std::string desgin_id)
     Http http = Http::get(host);
     http.header("accept", "application/json")
         //.header("Authorization")
-        .on_complete([this, &model_id](std::string body, unsigned status) {
+        .on_complete([&model_id](std::string body, unsigned status) {
         try {
             json j = json::parse(body);
             if (j.contains("id")) {
@@ -269,7 +269,7 @@ std::string ProjectPanel::get_model_id(std::string desgin_id)
             ;
         }
             })
-        .on_error([this](std::string body, std::string error, unsigned status) {
+        .on_error([](std::string body, std::string error, unsigned status) {
             })
         .perform_sync();
 

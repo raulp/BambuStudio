@@ -2023,7 +2023,7 @@ int CLI::run(int argc, char **argv)
             }
         }
         catch (std::exception& e) {
-            boost::nowide::cerr << construct_assemble_list << ": " << e.what() << std::endl;
+            boost::nowide::cerr << "construct_assemble_list: " << e.what() << std::endl;
             record_exit_reson(outfile_dir, CLI_DATA_FILE_ERROR, 0, cli_errors[CLI_DATA_FILE_ERROR], sliced_info);
             flush_and_exit(CLI_DATA_FILE_ERROR);
         }
@@ -2087,7 +2087,7 @@ int CLI::run(int argc, char **argv)
         }
     }
 
-    auto load_config_file = [config_substitution_rule](const std::string& file, DynamicPrintConfig& config, std::string& config_type,
+    auto load_config_file = [](const std::string& file, DynamicPrintConfig& config, std::string& config_type,
                                 std::string& config_name, std::string& filament_id, std::string& config_from) {
         if (! boost::filesystem::exists(file)) {
             boost::nowide::cerr << __FUNCTION__<< ": can not find setting file: " << file << std::endl;
@@ -4992,7 +4992,7 @@ int CLI::run(int argc, char **argv)
                     }
                 }
 
-                if (!arrange_cfg.is_seq_print && (assemble_plate.filaments_count > 1)||(enable_wrapping_detect && !current_wrapping_exclude_area.empty()))
+                if ((!arrange_cfg.is_seq_print && (assemble_plate.filaments_count > 1)) || (enable_wrapping_detect && !current_wrapping_exclude_area.empty()))
                 {
                     //prepare the wipe tower
                     int plate_count = partplate_list.get_plate_count();
@@ -7534,7 +7534,7 @@ int CLI::run(int argc, char **argv)
             gcode_viewer.render_calibration_thumbnail(*calibration_data, cali_thumbnail_width, cali_thumbnail_height,
                 calibration_params, partplate_list, opengl_mgr);
             //generate_calibration_thumbnail(*calibration_data, thumbnail_width, thumbnail_height, calibration_params);
-            //*plate_bboxes[index] = p->generate_first_layer_bbox();
+            *plate_bboxes[index] = p->generate_first_layer_bbox();
             calibration_thumbnails.push_back(calibration_data);*/
 
             PlateBBoxData* plate_bbox = new PlateBBoxData();
