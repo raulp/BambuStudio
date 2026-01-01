@@ -225,6 +225,15 @@ wxDEFINE_EVENT(EVT_HELIO_INPUT_DLG, SimpleEvent);
 #define PRINTER_PANEL_SIZE (wxSize(FromDIP(96), FromDIP(68)))
 #define BTN_SYNC_SIZE (wxSize(FromDIP(96), FromDIP(98)))
 
+// File-scope constant for download retry limit
+// Defined here instead of function-scope to avoid lambda capture issues:
+// - MSVC requires explicit capture of const variables in lambdas (C3493 error)
+// - Clang warns about unnecessary capture of const variables (unused-lambda-capture)
+// File-scope constant resolves both issues without platform-specific code
+namespace {
+    constexpr int MAX_DOWNLOAD_RETRIES = 3;
+}
+
 static string get_diameter_string(float diameter)
 {
     std::ostringstream stream;
@@ -3569,7 +3578,7 @@ void Sidebar::sync_ams_list(bool is_from_big_sync_btn)
 
     // BBS:Record consumables information before synchronization
     std::vector<string> color_before_sync;
-    std::vector<int> is_support_before;
+    std::vector<bool> is_support_before;
     DynamicPrintConfig& project_config = wxGetApp().preset_bundle->project_config;
     ConfigOptionStrings* color_opt = project_config.option<ConfigOptionStrings>("filament_colour");
     for (int i = 0; i < p->combos_filament.size(); ++i) {
@@ -12745,7 +12754,6 @@ void Plater::import_model_id(wxString download_info)
 
     bool download_ok = false;
     int retry_count = 0;
-    const int max_retries = 3;
 
     /* jump to 3D eidtor */
     wxGetApp().mainframe->select_tab((size_t)MainFrame::TabPosition::tp3DEditor);
@@ -12853,7 +12861,7 @@ void Plater::import_model_id(wxString download_info)
         bool size_limit = false;
         auto http = Http::get(download_url.ToStdString());
 
-        while (cont && retry_count < max_retries) {
+        while (cont && retry_count < MAX_DOWNLOAD_RETRIES) {
             retry_count++;
             http.on_progress([&percent, &cont, &msg, &filesize, &size_limit](Http::Progress progress, bool& cancel) {
 
@@ -12886,7 +12894,7 @@ void Plater::import_model_id(wxString download_info)
                         http_status,
                         error);
 
-                    if (retry_count == max_retries) {
+                    if (retry_count == MAX_DOWNLOAD_RETRIES) {
                         msg = _L("Importing to Bambu Studio failed. Please download the file and manually import it.");
                         cont = false;
                     }

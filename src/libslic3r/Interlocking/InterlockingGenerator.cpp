@@ -39,6 +39,9 @@ void InterlockingGenerator::generate_embedding_wall(PrintObject* print_object){
     const Vec3crd cell_size(cell_width, cell_width, 2);
 
     //generator
+    // Note: Clang warns these const variable captures are "not required" (C++ allows implicit
+    // capture of const variables in non-odr-use contexts). MSVC requires explicit capture.
+    // Keep explicit captures for cross-compiler compatibility and code clarity.
     tbb::parallel_for(
         tbb::blocked_range<size_t>(0, print_object->layers().size()),
         [print_object, beam_width, boundary_avoidance, cell_size, interface_dilation, air_dilation, air_filtering](const tbb::blocked_range<size_t>& range) {
