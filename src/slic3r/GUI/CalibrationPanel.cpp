@@ -269,7 +269,10 @@ void SelectMObjectPopup::Popup(wxWindow* WXUNUSED(focus))
         }
     }
 
-    wxPostEvent(this, wxTimerEvent());
+    // Immediate update instead of posting deprecated wxTimerEvent
+    wxCommandEvent user_event(EVT_UPDATE_USER_MLIST);
+    user_event.SetEventObject(this);
+    wxPostEvent(this, user_event);
     PopupWindow::Popup();
 }
 
@@ -505,7 +508,7 @@ void CalibrationPanel::init_timer()
     m_refresh_timer = new wxTimer();
     m_refresh_timer->SetOwner(this);
     m_refresh_timer->Start(REFRESH_INTERVAL);
-    wxPostEvent(this, wxTimerEvent());
+    update_all(); // Immediate update instead of posting deprecated wxTimerEvent
 }
 
 void CalibrationPanel::on_timer(wxTimerEvent& event) {
@@ -652,7 +655,7 @@ bool CalibrationPanel::Show(bool show) {
         m_refresh_timer->Stop();
         m_refresh_timer->SetOwner(this);
         m_refresh_timer->Start(REFRESH_INTERVAL);
-        wxPostEvent(this, wxTimerEvent());
+        update_all(); // Immediate update instead of posting deprecated wxTimerEvent
 
         DeviceManager* dev = Slic3r::GUI::wxGetApp().getDeviceManager();
         if (dev) {
