@@ -153,10 +153,10 @@ namespace
             wxImage image(width, height);
             image.InitAlpha();
 
-            for (unsigned int ih = 0; ih < height; ++ih)
+            for (int ih = 0; ih < height; ++ih)
             {
-                unsigned int rr = (height - 1 - ih) * width;
-                for (unsigned int iw = 0; iw < width; ++iw)
+                int rr = (height - 1 - ih) * width;
+                for (int iw = 0; iw < width; ++iw)
                 {
                     float* px = (float*)pixel_data.data() + 4 * (rr + iw);
                     const unsigned char r = px[0] * 255.0f;
@@ -181,7 +181,7 @@ namespace
         uint32_t prev_first_pos_index = 0;
         bool has_prev = false;
         if (flag) {
-            if (prev_seg_index != -1u) {
+            if (prev_seg_index != UINT32_MAX) {
                 uint32_t prev_second_pos_index = segment_index_list[prev_seg_index * 4 + 1];
                 if (prev_second_pos_index == first_pos_index) {
                     prev_first_pos_index = segment_index_list[prev_seg_index * 4 + 0];
@@ -1932,10 +1932,10 @@ namespace Slic3r
             bool Layer::is_valid() const
             {
                 bool rt = false;
-                if (m_start_sid == -1u) {
+                if (m_start_sid == UINT32_MAX) {
                     return false;
                 }
-                if (m_end_sid == -1u) {
+                if (m_end_sid == UINT32_MAX) {
                     return false;
                 }
                 if (m_start_sid > m_end_sid) {
@@ -1985,7 +1985,7 @@ namespace Slic3r
                 m_options_segment_list.reserve(seg_count);
                 m_other_segment_list.reserve(seg_count);
 
-                uint32_t prev_seg_index = -1u;
+                uint32_t prev_seg_index = UINT32_MAX;
 
                 uint32_t t_start_seg_index = start_seg_index == UINT32_MAX ? 0 : start_seg_index;
                 t_start_seg_index = std::min(t_start_seg_index, seg_count - 1);
@@ -1997,7 +1997,7 @@ namespace Slic3r
                 }
 
                 const auto t_view_type = t_layer_manager.get_view_type();
-                for (int i_seg = t_start_seg_index; i_seg <= t_end_seg_index; ++i_seg) {
+                for (uint32_t i_seg = t_start_seg_index; i_seg <= t_end_seg_index; ++i_seg) {
                     const auto& t_seg = m_segments[i_seg];
                     if (!t_layer_manager.is_move_type_visible(t_seg.m_type)) {
                         continue;
@@ -2478,7 +2478,7 @@ namespace Slic3r
                 const int t_start_count = 0;
                 const int t_end_count = seg_count;
 
-                if (start > t_end_count) {
+                if (static_cast<int>(start) > t_end_count) {
                     return;
                 }
                 if (start > m_current_move_range.second) {
@@ -2509,7 +2509,7 @@ namespace Slic3r
                 }
                 const int t_start_count = 1;
                 const int t_end_count = seg_count;
-                if (end > t_end_count) {
+                if (static_cast<int>(end) > t_end_count) {
                     return;
                 }
                 if (end < m_current_move_range.first) {
@@ -2628,7 +2628,7 @@ namespace Slic3r
                 const auto& t_segment_vertices = t_top_layer.get_segment_vertices();
                 size_t t_start_seg_count = m_current_move_range.first;
                 size_t t_end_seg_count = m_current_move_range.second;
-                uint32_t prev_seg_index = -1u;
+                uint32_t prev_seg_index = UINT32_MAX;
 
                 m_options_segment_list.reserve(1000);
                 m_other_segment_list.reserve(1000);

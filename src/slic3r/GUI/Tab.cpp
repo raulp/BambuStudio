@@ -6808,7 +6808,7 @@ void Tab::update_extruder_variants(int extruder_id, bool reload)
         int  n        = m_variant_combo->GetSelection();
         auto options  = generate_extruder_options();
         m_variant_combo->SetOptions(options);
-        for (int i = 0; i < m_variant_combo->GetCount(); ++i) {
+        for (unsigned int i = 0; i < m_variant_combo->GetCount(); ++i) {
             auto flow_type = get_actual_nozzle_flow_type(i);
             auto ext_type  = get_actual_extruder_type(i);
             bool connected = false;

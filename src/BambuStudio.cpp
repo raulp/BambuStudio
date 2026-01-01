@@ -155,6 +155,11 @@ std::map<int, std::string> cli_errors = {
     {CLI_GCODE_IN_WRAPPING_DETECT_AREA, "Found G-code in the wrapping detect area. Please make sure the 3mf file can be successfully sliced in the latest Bambu Studio."}
 };
 
+namespace {
+    // File-scope constant to avoid lambda capture issues across compilers (MSVC vs Clang)
+    constexpr ForwardCompatibilitySubstitutionRule config_substitution_rule = ForwardCompatibilitySubstitutionRule::Enable;
+}
+
 typedef struct  _object_info{
     int id{0};
     std::string name;
@@ -1447,9 +1452,8 @@ int CLI::run(int argc, char **argv)
     std::vector<std::string>                    downward_settings          = m_config.option<ConfigOptionStrings>("downward_settings", true)->values;
     std::vector<std::string> downward_compatible_machines;
     std::set<std::string> downward_uncompatible_machines;
-    //BBS: always use ForwardCompatibilitySubstitutionRule::Enable
+    //BBS: always use ForwardCompatibilitySubstitutionRule::Enable (now defined at file scope)
     //const ForwardCompatibilitySubstitutionRule   config_substitution_rule = m_config.option<ConfigOptionEnum<ForwardCompatibilitySubstitutionRule>>("config_compatibility", true)->value;
-    const ForwardCompatibilitySubstitutionRule   config_substitution_rule = ForwardCompatibilitySubstitutionRule::Enable;
     const std::vector<std::string>              &load_filaments           = m_config.option<ConfigOptionStrings>("load_filaments", true)->values;
     //skip model object logic
     const std::vector<int>                      &skip_objects             = m_config.option<ConfigOptionInts>("skip_objects", true)->values;

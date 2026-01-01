@@ -2673,8 +2673,7 @@ void PartPlate::generate_exclude_polygon(ExPolygon &exclude_polygon)
 {
 	auto compute_exclude_points = [&exclude_polygon](Vec2d& center, double radius, double start_angle, double stop_angle, int count)
 	{
-		double angle, angle_steps;
-		angle_steps = (stop_angle - start_angle) / (count - 1);
+		double angle_steps = (stop_angle - start_angle) / (count - 1);
 		for(int j = 0; j < count; j++ )
 		{
 			double angle = start_angle + j * angle_steps;
@@ -2692,7 +2691,7 @@ void PartPlate::generate_exclude_polygon(ExPolygon &exclude_polygon)
 			{
 				const Vec2d& p = m_exclude_area[i];
 				Vec2d center;
-				double start_angle, stop_angle, angle_steps, radius_x, radius_y, radius;
+				double start_angle, stop_angle, radius;
 				switch (i) {
 					case 0:
                         radius = 8.f;
@@ -5464,7 +5463,7 @@ void PartPlateList::postprocess_bed_index_for_selected(arrangement::ArrangePolyg
 		else
 		{
 			//judge whether it is at the left side of the plate border
-			if (arrange_polygon.bed_idx <= i)
+			if (arrange_polygon.bed_idx <= static_cast<int>(i))
 			{
 				BOOST_LOG_TRIVIAL(debug) << __FUNCTION__ << boost::format(":found in plate_index %1%, bed_idx %2%") % i % arrange_polygon.bed_idx;
 				return;
@@ -5509,7 +5508,7 @@ void PartPlateList::postprocess_bed_index_for_unselected(arrangement::ArrangePol
 		else
 		{
 			//judge whether it is at the left side of the plate border
-			if (arrange_polygon.bed_idx <= i)
+			if (arrange_polygon.bed_idx <= static_cast<int>(i))
 			{
 				BOOST_LOG_TRIVIAL(debug) << __FUNCTION__ << boost::format(":found in plate_index %1%, bed_idx %2%") % i % arrange_polygon.bed_idx;
 				return;

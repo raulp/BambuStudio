@@ -1279,7 +1279,7 @@ std::vector<std::vector<std::vector<float>>> PresetBundle::get_full_flush_matrix
     for(size_t extruder_id = 0; extruder_id < extruder_nums; ++ extruder_id){
         std::vector<float>              flush_matrix(cast<float>(get_flush_volumes_matrix(flush_volume_value, extruder_id, extruder_nums)));
         std::vector<std::vector<float>> wipe_volumes;
-        for (unsigned int i = 0; i < filament_nums; ++i)
+        for (int i = 0; i < filament_nums; ++i)
             wipe_volumes.push_back(std::vector<float>(flush_matrix.begin() + i * filament_nums, flush_matrix.begin() + (i + 1) * filament_nums));
 
         matrix.emplace_back(wipe_volumes);
@@ -4433,7 +4433,7 @@ std::pair<PresetsConfigSubstitutions, size_t> PresetBundle::load_vendor_configs_
                             }
                         }
                     } catch (const std::exception &e) {
-                        BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << ": Failed to parse includes array: " << include;
+                        BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << ": Failed to parse includes array: " << include << ", error: " << e.what();
                     }
                 }
                 else

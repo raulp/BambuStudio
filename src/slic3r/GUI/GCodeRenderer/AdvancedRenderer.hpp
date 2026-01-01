@@ -134,14 +134,14 @@ namespace Slic3r {
 
             struct SegmentVertex
             {
-                uint32_t m_move_id{ -1u };
+                uint32_t m_move_id{ UINT32_MAX };
                 std::vector<uint32_t> m_indices;
             };
 
             struct Segment
             {
-                uint32_t m_first_mid{ -1u };
-                uint32_t m_second_mid{ -1u };
+                uint32_t m_first_mid{ UINT32_MAX };
+                uint32_t m_second_mid{ UINT32_MAX };
                 EMoveType m_type{ EMoveType::Count };
                 ExtrusionRole m_role{ ExtrusionRole::erCount };
                 uint16_t m_extruder_id{ UINT16_MAX };
@@ -209,8 +209,8 @@ namespace Slic3r {
 
             private:
                 bool m_b_valid{ true };
-                uint32_t m_start_sid{ -1u };
-                uint32_t m_end_sid{ -1u };
+                uint32_t m_start_sid{ UINT32_MAX };
+                uint32_t m_end_sid{ UINT32_MAX };
                 float m_zs{ 0.0f };
                 std::vector<Segment> m_segments;
                 std::vector<uint32_t> m_visible_segment_list;

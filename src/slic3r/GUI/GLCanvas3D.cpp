@@ -7728,7 +7728,7 @@ void GLCanvas3D::_render_objects(GLVolumeCollection &cur_volumes, GLVolumeCollec
     if (m_use_clipping_planes)
         cur_volumes.set_z_range(-m_clipping_planes[0].get_data()[3], m_clipping_planes[1].get_data()[3]);
     else
-        cur_volumes.set_z_range(-FLT_MAX, FLT_MAX);
+        cur_volumes.set_z_range(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::max());
 
     GLGizmosManager& gm = get_gizmos_manager();
     GLGizmoBase* current_gizmo = gm.get_current();

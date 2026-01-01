@@ -719,7 +719,7 @@ bool do_boolean_single(McutMesh &srcMesh, const McutMesh &cutMesh, const std::st
     McutMesh outMesh;
     int N_vertices = 0;
     // traversal of all connected components
-    for (int n = 0; n < numConnComps; ++n) {
+    for (uint32_t n = 0; n < numConnComps; ++n) {
         if (cancel_cb && cancel_cb()) {
             return false;
         }
