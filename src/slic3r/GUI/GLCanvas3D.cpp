@@ -7714,8 +7714,8 @@ void GLCanvas3D::_render_objects(GLVolumeCollection &cur_volumes, GLVolumeCollec
         case BuildVolume::Type::Convex:
         case BuildVolume::Type::Custom: {
             cur_volumes.set_print_volume({static_cast<int>(type),
-                { -FLT_MAX, -FLT_MAX, FLT_MAX, FLT_MAX },
-                { -FLT_MAX, FLT_MAX } }
+                { std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), FLT_MAX, FLT_MAX },
+                { std::numeric_limits<float>::lowest(), FLT_MAX } }
             );
         }
         }
