@@ -61,7 +61,10 @@ bool MultiMachinePage::Show(bool show)
         m_refresh_timer->Stop();
         m_refresh_timer->SetOwner(this);
         m_refresh_timer->Start(2000);
-        wxPostEvent(this, wxTimerEvent());
+        // Immediate update instead of posting deprecated wxTimerEvent
+        m_local_task_manager->update_page();
+        m_cloud_task_manager->update_page();
+        m_machine_manager->update_page();
     }
     else {
         m_refresh_timer->Stop();

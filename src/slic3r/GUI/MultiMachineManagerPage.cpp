@@ -678,7 +678,10 @@ void MultiMachineManagerPage::start_timer()
 
     m_flipping_timer->SetOwner(this);
     m_flipping_timer->Start(1000);
-    wxPostEvent(this, wxTimerEvent());
+    // Immediate update instead of posting deprecated wxTimerEvent
+    m_flipping_timer->Stop();
+    if (btn_last_page) btn_last_page->Enable(true);
+    if (btn_next_page) btn_next_page->Enable(true);
 }
 
 void MultiMachineManagerPage::update_page_number()

@@ -808,7 +808,11 @@ bool SendMultiMachinePage::Show(bool show)
         m_refresh_timer->Stop();
         m_refresh_timer->SetOwner(this);
         m_refresh_timer->Start(4000);
-        wxPostEvent(this, wxTimerEvent());
+        // Immediate update instead of posting deprecated wxTimerEvent
+        for (auto it = m_device_items.begin(); it != m_device_items.end(); it++) {
+            it->second->sync_state();
+            it->second->Refresh();
+        }
     }
     else {
         m_refresh_timer->Stop();
