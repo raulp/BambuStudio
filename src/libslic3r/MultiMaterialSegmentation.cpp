@@ -2337,7 +2337,7 @@ std::vector<std::vector<ExPolygons>> multi_material_segmentation_by_painting(con
 
 std::vector<std::vector<ExPolygons>> fuzzy_skin_segmentation_by_painting(const PrintObject &print_object, const std::function<void()> &throw_on_cancel_callback)
 {
-    const size_t                         num_extruders = 1;
+    constexpr size_t                     num_extruders = 1;
     const size_t                         num_layers    = print_object.layers().size();
     std::vector<std::vector<ExPolygons>> segmented_regions(num_layers);
     segmented_regions.assign(num_layers, std::vector<ExPolygons>(num_extruders + 1));
@@ -2505,9 +2505,8 @@ std::vector<std::vector<ExPolygons>> fuzzy_skin_segmentation_by_painting(const P
                              << std::count_if(painted_lines.begin(), painted_lines.end(), [](const std::vector<PaintedLine> &pl) { return !pl.empty(); });
 
     BOOST_LOG_TRIVIAL(debug) << "MM segmentation - layers segmentation in parallel - begin";
-    // Note: num_extruders explicitly captured despite Clang warning it's "not required".
-    // MSVC requires explicit capture of const variables. Keep for cross-compiler compatibility.
-    tbb::parallel_for(tbb::blocked_range<size_t>(0, num_layers), [&edge_grids, &input_expolygons, &painted_lines, &segmented_regions, &num_extruders,
+    // Note: num_extruders changed to constexpr to avoid lambda capture issues across compilers
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, num_layers), [&edge_grids, &input_expolygons, &painted_lines, &segmented_regions,
                                                                   &throw_on_cancel_callback](const tbb::blocked_range<size_t> &range) {
         for (size_t layer_idx = range.begin(); layer_idx < range.end(); ++layer_idx) {
             throw_on_cancel_callback();

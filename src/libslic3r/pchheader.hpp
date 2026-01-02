@@ -61,7 +61,6 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/bind/bind.hpp>
-using namespace boost::placeholders;
 #include <boost/config.hpp>
 #include <boost/config/warning_disable.hpp>
 #include <boost/container/small_vector.hpp>

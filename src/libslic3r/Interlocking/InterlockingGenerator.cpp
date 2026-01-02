@@ -26,25 +26,23 @@ template<> struct hash<Slic3r::GridPoint3>
 namespace Slic3r {
 void InterlockingGenerator::generate_embedding_wall(PrintObject* print_object){
     //params
-    const int      interface_depth    = 2;
-    const int      boundary_avoidance = 2;
+    constexpr int      interface_depth    = 2;
+    constexpr int      boundary_avoidance = 2;
     constexpr coord_t DEFAULT_BEAM_WIDTH = scaled(0.2); // 例如默认2mm
-    const coord_t beam_width = DEFAULT_BEAM_WIDTH;
+    constexpr coord_t beam_width = DEFAULT_BEAM_WIDTH;
 
     const DilationKernel interface_dilation(GridPoint3(interface_depth, interface_depth, interface_depth), DilationKernel::Type::PRISM);
-    const bool           air_filtering = boundary_avoidance > 0;
+    constexpr bool           air_filtering = boundary_avoidance > 0;
     const DilationKernel air_dilation(GridPoint3(boundary_avoidance, boundary_avoidance, boundary_avoidance), DilationKernel::Type::PRISM);
 
     const coord_t cell_width = beam_width + beam_width;
     const Vec3crd cell_size(cell_width, cell_width, 2);
 
     //generator
-    // Note: Clang warns these const variable captures are "not required" (C++ allows implicit
-    // capture of const variables in non-odr-use contexts). MSVC requires explicit capture.
-    // Keep explicit captures for cross-compiler compatibility and code clarity.
+    // Note: Variables changed to constexpr to avoid lambda capture issues across compilers
     tbb::parallel_for(
         tbb::blocked_range<size_t>(0, print_object->layers().size()),
-        [print_object, beam_width, boundary_avoidance, cell_size, interface_dilation, air_dilation, air_filtering](const tbb::blocked_range<size_t>& range) {
+        [print_object, cell_size, interface_dilation, air_dilation](const tbb::blocked_range<size_t>& range) {
             for (size_t i = range.begin(); i != range.end(); ++i) {
                 Layer* layer = print_object->layers()[i];
                 if (layer->id() % 2 == 0)
