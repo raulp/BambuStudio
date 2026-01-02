@@ -24,18 +24,22 @@ template<> struct hash<Slic3r::GridPoint3>
 
 
 namespace Slic3r {
+
+namespace {
+    // File-scope constants to avoid lambda capture issues across compilers (MSVC vs Clang)
+    constexpr int      INTERFACE_DEPTH    = 2;
+    constexpr int      BOUNDARY_AVOIDANCE = 2;
+    constexpr coord_t  DEFAULT_BEAM_WIDTH = scaled(0.2); // 例如默认2mm
+    constexpr coord_t  BEAM_WIDTH = DEFAULT_BEAM_WIDTH;
+    constexpr bool     AIR_FILTERING = BOUNDARY_AVOIDANCE > 0;
+}
+
 void InterlockingGenerator::generate_embedding_wall(PrintObject* print_object){
     //params
-    constexpr int      interface_depth    = 2;
-    constexpr int      boundary_avoidance = 2;
-    constexpr coord_t DEFAULT_BEAM_WIDTH = scaled(0.2); // 例如默认2mm
-    constexpr coord_t beam_width = DEFAULT_BEAM_WIDTH;
+    const DilationKernel interface_dilation(GridPoint3(INTERFACE_DEPTH, INTERFACE_DEPTH, INTERFACE_DEPTH), DilationKernel::Type::PRISM);
+    const DilationKernel air_dilation(GridPoint3(BOUNDARY_AVOIDANCE, BOUNDARY_AVOIDANCE, BOUNDARY_AVOIDANCE), DilationKernel::Type::PRISM);
 
-    const DilationKernel interface_dilation(GridPoint3(interface_depth, interface_depth, interface_depth), DilationKernel::Type::PRISM);
-    constexpr bool           air_filtering = boundary_avoidance > 0;
-    const DilationKernel air_dilation(GridPoint3(boundary_avoidance, boundary_avoidance, boundary_avoidance), DilationKernel::Type::PRISM);
-
-    const coord_t cell_width = beam_width + beam_width;
+    const coord_t cell_width = BEAM_WIDTH + BEAM_WIDTH;
     const Vec3crd cell_size(cell_width, cell_width, 2);
 
     //generator
@@ -59,8 +63,8 @@ void InterlockingGenerator::generate_embedding_wall(PrintObject* print_object){
                         continue;
                     }
                     //has embedding part
-                    InterlockingGenerator gen(*print_object, region_a_index, region_b_index, beam_width, boundary_avoidance, 0, cell_size, 1,
-                                              interface_dilation, air_dilation, air_filtering);
+                    InterlockingGenerator gen(*print_object, region_a_index, region_b_index, BEAM_WIDTH, BOUNDARY_AVOIDANCE, 0, cell_size, 1,
+                                              interface_dilation, air_dilation, AIR_FILTERING);
                     gen.generateInterlockingwall(layer);
                 }
             }
