@@ -505,7 +505,7 @@ void Layer::simplify_support_path(ExtrusionPath * path)
 
     if (enable_arc_fitting &&
         !spiral_mode) {
-        path->simplify_by_fitting_arc(SCALED_SUPPORT_RESOLUTION);
+        path->simplify_by_fitting_arc(scaled_resolution);
     } else {
         path->simplify(scaled_resolution);
     }
@@ -521,7 +521,7 @@ void Layer::simplify_support_multi_path(ExtrusionMultiPath* multipath)
     for (size_t i = 0; i < multipath->paths.size(); ++i) {
         if (enable_arc_fitting &&
             !spiral_mode) {
-            multipath->paths[i].simplify_by_fitting_arc(SCALED_SUPPORT_RESOLUTION);
+            multipath->paths[i].simplify_by_fitting_arc(scaled_resolution);
         } else {
             multipath->paths[i].simplify(scaled_resolution);
         }
@@ -538,7 +538,7 @@ void Layer::simplify_support_loop(ExtrusionLoop* loop)
     for (size_t i = 0; i < loop->paths.size(); ++i) {
         if (enable_arc_fitting &&
             !spiral_mode) {
-            loop->paths[i].simplify_by_fitting_arc(SCALED_SUPPORT_RESOLUTION);
+            loop->paths[i].simplify_by_fitting_arc(scaled_resolution);
         } else {
             loop->paths[i].simplify(scaled_resolution);
         }
