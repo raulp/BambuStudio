@@ -1918,15 +1918,17 @@ void generate_support_toolpaths(
             // support interface ironing related generation from Orca: Generate iron toolpath for contact layer
             if (!layer_cache.polys_to_iron.empty() && support_params.enable_support_ironing) {
                 auto ironing_fill = std::unique_ptr<Fill>(Fill::new_from_type(support_params.ironing_pattern));
-                ironing_fill->set_bounding_box(bbox_object);
+
+                ExPolygons polys_to_iron = union_safety_offset_ex(layer_cache.polys_to_iron);
+                // Calculate bounding box from actual support interface polygons instead of using hardcoded tiny bbox
+                BoundingBox actual_bbox = get_extents(polys_to_iron);
+                ironing_fill->set_bounding_box(actual_bbox);
                 ironing_fill->layer_id = support_layer.id();
                 ironing_fill->z        = support_layer.print_z;
                 ironing_fill->overlap  = 0;
                 ironing_fill->angle    = support_params.ironing_angle;
                 ironing_fill->spacing  = support_params.ironing_line_spacing;
                 ironing_fill->link_max_length = (coord_t) scale_(3. * ironing_fill->spacing);
-
-                ExPolygons polys_to_iron = union_safety_offset_ex(layer_cache.polys_to_iron);
                 layer_cache.polys_to_iron.clear();
 
                 // Find the layer above that directly overlaps current layer, clip the overlapped part

@@ -1529,7 +1529,9 @@ void TreeSupport::generate_toolpaths()
         // support interface ironing related generation, tree support logic
         if (m_support_params.enable_support_ironing && !unioned_expolygons.empty()) {
             auto ironing_fill = std::unique_ptr<Fill>(Fill::new_from_type(m_support_params.ironing_pattern));
-            ironing_fill->set_bounding_box(bbox_object);
+            // Calculate bounding box from actual support interface polygons instead of using hardcoded tiny bbox
+            BoundingBox actual_bbox = get_extents(unioned_expolygons);
+            ironing_fill->set_bounding_box(actual_bbox);
             ironing_fill->layer_id        = ts_layer->id();
             ironing_fill->z               = ts_layer->print_z;
             ironing_fill->overlap         = 0;
