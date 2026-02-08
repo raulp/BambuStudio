@@ -3708,27 +3708,27 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionFloatsNullable { 0. });
 
 #ifdef HAS_PRESSURE_EQUALIZER
-    //def = this->add("max_volumetric_extrusion_rate_slope_positive", coFloat);
-    //def->label = L("Max volumetric slope positive");
-    //def->tooltip = L("This experimental setting is used to limit the speed of change in extrusion rate. "
-    //               "A value of 1.8 mm³/s² ensures, that a change from the extrusion rate "
-    //               "of 1.8 mm³/s (0.45mm extrusion width, 0.2mm extrusion height, feedrate 20 mm/s) "
-    //               "to 5.4 mm³/s (feedrate 60 mm/s) will take at least 2 seconds.");
-    //def->sidetext = L("mm³/s²");
-    //def->min = 0;
-    //def->mode = comAdvanced;
-    //def->set_default_value(new ConfigOptionFloat(0));
+    def = this->add("max_volumetric_extrusion_rate_slope_positive", coFloat);
+    def->label = L("Max volumetric slope positive");
+    def->tooltip = L("This experimental setting is used to limit the speed of change in extrusion rate. "
+                   "A value of 1.8 mm\xc2\xb3/s\xc2\xb2 ensures, that a change from the extrusion rate "
+                   "of 1.8 mm\xc2\xb3/s (0.45mm extrusion width, 0.2mm extrusion height, feedrate 20 mm/s) "
+                   "to 5.4 mm\xc2\xb3/s (feedrate 60 mm/s) will take at least 2 seconds.");
+    def->sidetext = L("mm\xc2\xb3/s\xc2\xb2");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0));
 
-    //def = this->add("max_volumetric_extrusion_rate_slope_negative", coFloat);
-    //def->label = L("Max volumetric slope negative");
-    //def->tooltip = L("This experimental setting is used to limit the speed of change in extrusion rate. "
-    //               "A value of 1.8 mm³/s² ensures, that a change from the extrusion rate "
-    //               "of 1.8 mm³/s (0.45mm extrusion width, 0.2mm extrusion height, feedrate 20 mm/s) "
-    //               "to 5.4 mm³/s (feedrate 60 mm/s) will take at least 2 seconds.");
-    //def->sidetext = L("mm³/s²");
-    //def->min = 0;
-    //def->mode = comAdvanced;
-    //def->set_default_value(new ConfigOptionFloat(0));
+    def = this->add("max_volumetric_extrusion_rate_slope_negative", coFloat);
+    def->label = L("Max volumetric slope negative");
+    def->tooltip = L("This experimental setting is used to limit the speed of change in extrusion rate. "
+                   "A value of 1.8 mm\xc2\xb3/s\xc2\xb2 ensures, that a change from the extrusion rate "
+                   "of 1.8 mm\xc2\xb3/s (0.45mm extrusion width, 0.2mm extrusion height, feedrate 20 mm/s) "
+                   "to 5.4 mm\xc2\xb3/s (feedrate 60 mm/s) will take at least 2 seconds.");
+    def->sidetext = L("mm\xc2\xb3/s\xc2\xb2");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0));
 #endif /* HAS_PRESSURE_EQUALIZER */
 
     def = this->add("fan_min_speed", coInts);

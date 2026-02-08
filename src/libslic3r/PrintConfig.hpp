@@ -28,7 +28,7 @@
 #include <boost/preprocessor/tuple/elem.hpp>
 #include <boost/preprocessor/tuple/to_seq.hpp>
 
-// #define HAS_PRESSURE_EQUALIZER
+#define HAS_PRESSURE_EQUALIZER
 
 namespace Slic3r {
 
@@ -1164,10 +1164,10 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionString,              layer_change_gcode))
     ((ConfigOptionString,              time_lapse_gcode))
     ((ConfigOptionString,              wrapping_detection_gcode))
-//#ifdef HAS_PRESSURE_EQUALIZER
-//    ((ConfigOptionFloat,               max_volumetric_extrusion_rate_slope_positive))
-//    ((ConfigOptionFloat,               max_volumetric_extrusion_rate_slope_negative))
-//#endif
+#ifdef HAS_PRESSURE_EQUALIZER
+    ((ConfigOptionFloat,               max_volumetric_extrusion_rate_slope_positive))
+    ((ConfigOptionFloat,               max_volumetric_extrusion_rate_slope_negative))
+#endif
     ((ConfigOptionPercentsNullable,    retract_before_wipe))
     ((ConfigOptionFloatsNullable,      retraction_length))
     ((ConfigOptionFloatsNullable,      retract_length_toolchange))
