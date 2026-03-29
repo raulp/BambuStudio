@@ -4377,6 +4377,32 @@ void PrintConfigDef::init_fff_params()
     def->mode    = comAdvanced;
     def->set_default_value(new ConfigOptionInt(10));
 
+    // Resonance avoidance feature
+    // Adjusts outer wall print speeds to avoid printer resonance frequencies that cause ringing artifacts.
+    // Uses a bidirectional midpoint algorithm: speeds below the midpoint are clamped to min,
+    // speeds above midpoint are boosted to max, avoiding the resonance zone entirely.
+    def          = this->add("resonance_avoidance", coBools);
+    def->label   = L("Resonance avoidance");
+    def->category = L("Speed");
+    def->tooltip = L("Adjust outer wall speed to avoid printer resonance zones, reducing ringing or VFA.\n"
+                     "Enable this option and configure zones to activate.\n"
+                     "Disable when calibrating for ringing.");
+    def->mode    = comSimple;
+    def->set_default_value(new ConfigOptionBools{ false });
+
+    // Multi-zone resonance avoidance
+    // Stores interleaved min-max pairs: [min1, max1, min2, max2, ...]
+    def           = this->add("resonance_avoidance_zones", coFloats);
+    def->label    = L("Resonance zones");
+    def->category = L("Speed");
+    def->tooltip  = L("Speed ranges to avoid, in min-max pairs.\n"
+                      "Example: 70-120 and 150-180 mm/s.\n"
+                      "Use the dynamic UI in Printer Settings to manage zones.");
+    def->sidetext = L("mm/s");
+    def->min      = 0;
+    def->mode     = comSimple;
+    def->set_default_value(new ConfigOptionFloats{});  // Empty = no zones
+
     def          = this->add("seam_slope_inner_walls", coBool);
     def->label   = L("Scarf joint for inner walls");
     def->category = L("Quality");
@@ -6755,7 +6781,8 @@ std::set<std::string> printer_extruder_options = {
     "extruder_printable_height",
     "min_layer_height",
     "max_layer_height",
-    "extruder_max_nozzle_count"
+    "extruder_max_nozzle_count",
+    "resonance_avoidance"
 };
 
 std::set<std::string> printer_options_with_variant_1 = {
@@ -8714,6 +8741,52 @@ std::map<std::string, std::string> validate(const FullPrintConfig &cfg, bool und
         }
     }
 
+    // Validate multi-zone resonance avoidance
+    // Zones are stored as interleaved min-max pairs: [min1, max1, min2, max2, ...]
+    for (size_t i = 0; i < cfg.resonance_avoidance.values.size(); ++i) {
+        if (cfg.resonance_avoidance.get_at(i)) {
+            // Get zones for this extruder (per-extruder config)
+            const auto& zones = cfg.resonance_avoidance_zones.values;
+
+            if (!zones.empty()) {
+                // Must have even number of values (pairs)
+                if (zones.size() % 2 != 0) {
+                    error_message.emplace("resonance_avoidance_zones",
+                        L("Resonance zones must be in min-max pairs (even number of values)"));
+                    break;
+                }
+
+                // Validate each zone pair
+                for (size_t j = 0; j < zones.size(); j += 2) {
+                    if (j + 1 >= zones.size()) {
+                        break;
+                    }
+
+                    double min_speed = zones[j];
+                    double max_speed = zones[j + 1];
+
+                    // Both must be positive
+                    if (min_speed <= 0 || max_speed <= 0) {
+                        error_message.emplace("resonance_avoidance_zones",
+                            L("Zone speeds must be greater than 0 (zone ") +
+                            std::to_string(j/2 + 1) + L(")"));
+                        break;
+                    }
+
+                    // Min must be less than max
+                    if (min_speed >= max_speed) {
+                        error_message.emplace("resonance_avoidance_zones",
+                            L("Zone min must be less than max (zone ") +
+                            std::to_string(j/2 + 1) + L(": min=") +
+                            std::to_string(min_speed) + L(", max=") +
+                            std::to_string(max_speed) + L(")"));
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     // The configuration is valid.
     return error_message;
 }
@@ -9018,6 +9091,20 @@ CLITransformConfigDef::CLITransformConfigDef()
 CLIMiscConfigDef::CLIMiscConfigDef()
 {
     ConfigOptionDef* def;
+
+    // Original datadir option (kept for compatibility, currently unused)
+    def = this->add("datadir", coString);
+    def->label = "Data directory";
+    def->tooltip = "Use custom data directory for configuration, profiles, and cache";
+    def->cli_params = "path";
+    def->set_default_value(new ConfigOptionString(""));
+
+    // Development-only: custom data directory (not for production use)
+    def = this->add("dev-data-dir", coString);
+    def->label = "Dev data directory";
+    def->tooltip = "Development only: Use custom data directory for configuration, profiles, and cache";
+    def->cli_params = "path";
+    def->set_default_value(new ConfigOptionString(""));
 
     /*def = this->add("ignore_nonexistent_config", coBool);
     def->label = L("Ignore non-existent config files");

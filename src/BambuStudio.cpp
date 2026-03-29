@@ -7882,6 +7882,12 @@ bool CLI::setup(int argc, char **argv)
 
     //set_data_dir(m_config.opt_string("datadir"));
 
+    // Development-only: Allow custom data directory via --dev-data-dir
+    std::string dev_data_dir = m_config.opt_string("dev-data-dir");
+    if (!dev_data_dir.empty()) {
+        set_data_dir(dev_data_dir);
+    }
+
     //FIXME Validating at this stage most likely does not make sense, as the config is not fully initialized yet.
     if (!validity.empty()) {
         boost::nowide::cerr << "Params in command line error: "<< std::endl;

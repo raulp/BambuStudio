@@ -461,6 +461,78 @@ CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(PerimeterGeneratorType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(TopOneWallType)
 #undef CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS
 
+// Represents a single resonance avoidance zone with min/max speeds
+struct ResonanceZone {
+    double min_speed;
+    double max_speed;
+
+    ResonanceZone() : min_speed(0), max_speed(0) {}
+    ResonanceZone(double min, double max) : min_speed(min), max_speed(max) {}
+
+    // Validation
+    bool is_valid(std::string* error_msg = nullptr) const {
+        // Min must be less than max
+        if (min_speed >= max_speed) {
+            if (error_msg)
+                *error_msg = "Minimum speed must be less than maximum speed";
+            return false;
+        }
+        // Both values must be positive
+        if (min_speed <= 0 || max_speed <= 0) {
+            if (error_msg)
+                *error_msg = "Speeds must be greater than 0";
+            return false;
+        }
+        return true;
+    }
+
+    // Speed checks
+    bool contains(double speed) const {
+        return speed >= min_speed && speed < max_speed;
+    }
+
+    double get_midpoint() const {
+        return min_speed + ((max_speed - min_speed) / 2.0);
+    }
+
+    // Overlap detection
+    bool overlaps_with(const ResonanceZone& other) const {
+        // Ranges overlap if A_min < B_max AND B_min < A_max
+        return min_speed < other.max_speed && other.min_speed < max_speed;
+    }
+
+    // Speed adjustment algorithm (bidirectional midpoint)
+    double adjust_speed(double speed) const {
+        // Only adjust if speed falls in this zone
+        if (!contains(speed)) {
+            return speed;
+        }
+
+        // Bidirectional midpoint algorithm
+        const double midpoint = get_midpoint();
+
+        if (speed < midpoint) {
+            // Below midpoint -> clamp down to min
+            return std::min(speed, min_speed);
+        } else {
+            // Above midpoint -> boost up to max
+            return max_speed;
+        }
+    }
+
+    // Comparison operators for tracking/searching
+    // Use epsilon for floating point comparison to avoid precision issues
+    bool operator==(const ResonanceZone& other) const {
+        const double EPSILON = 0.0001;
+        return std::abs(min_speed - other.min_speed) < EPSILON &&
+               std::abs(max_speed - other.max_speed) < EPSILON;
+    }
+
+    bool operator!=(const ResonanceZone& other) const {
+        return !(*this == other);
+    }
+};
+
 // Defines each and every confiuration option of Slic3r, including the properties of the GUI dialogs.
 // Does not store the actual values, but defines default values.
 class PrintConfigDef : public ConfigDef
@@ -1078,6 +1150,10 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloatsNullable,       machine_min_travel_rate))
     // M205 S... [mm/sec]
     ((ConfigOptionFloatsNullable,       machine_min_extruding_rate))
+
+    // Resonance avoidance: adjusts outer wall speeds to avoid resonance frequencies
+    ((ConfigOptionBools,                resonance_avoidance))
+    ((ConfigOptionFloats,               resonance_avoidance_zones))
 )
 
 // This object is mapped to Perl as Slic3r::Config::GCode.

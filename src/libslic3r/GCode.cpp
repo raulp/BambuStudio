@@ -6183,13 +6183,65 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
     //        m_config.max_volumetric_speed.value / path.mm3_per_mm
     //    );
     //}
+
+    // Save volumetric speed limit for later re-clamping after resonance adjustments
+    double volumetric_speed_limit = std::numeric_limits<double>::max();
+
     if (filament_max_volumetric_speed > 0) {
         double extrude_speed = filament_max_volumetric_speed / path.mm3_per_mm;
-        if (_mm3_per_mm > 0)
+        if (_mm3_per_mm > 0) {
             extrude_speed = filament_max_volumetric_speed / _mm3_per_mm;
+        }
+
+        volumetric_speed_limit = extrude_speed;  // Save for resonance re-clamp
 
         // cap speed with max_volumetric_speed anyway (even if user is not using autospeed)
         speed = std::min(speed, extrude_speed);
+    }
+
+    // Multi-zone resonance avoidance for external perimeters
+    // Adjusts outer wall speeds to avoid printer resonance frequencies that cause ringing.
+    //
+    // Algorithm (bidirectional midpoint adjustment for each zone):
+    //   1. Check each zone pair (min, max) from the zones config
+    //   2. If speed falls within a zone (speed < max AND max > min):
+    //      - Calculate midpoint of that zone
+    //      - Speeds below midpoint: clamp DOWN to zone min (safe zone below resonance)
+    //      - Speeds above midpoint: boost UP to zone max (safe zone above resonance)
+    //   3. Once a zone matches, adjustment is applied and we break (no cascading)
+    //
+    // Zones are stored as interleaved min-max pairs: [min1, max1, min2, max2, ...]
+    // This is stateless - no flags or state variables needed. Each path segment is
+    // evaluated independently based on its target speed.
+    if (path.role() == erExternalPerimeter && EXTRUDER_CONFIG(resonance_avoidance)) {
+        // Resonance avoidance: adjust speed to avoid problematic frequencies
+        const auto& zones_config = m_config.resonance_avoidance_zones;
+
+        // Convert config array to ResonanceZone objects and check each zone
+        for (size_t i = 0; i < zones_config.values.size(); i += 2) {
+            if (i + 1 >= zones_config.values.size()) {
+                break;  // Incomplete pair
+            }
+
+            ResonanceZone zone(zones_config.values[i], zones_config.values[i + 1]);
+
+            // Skip invalid zones (defensive check against corrupted config data)
+            if (!zone.is_valid()) {
+                continue;
+            }
+
+            // Use the zone's adjust_speed method (bidirectional midpoint algorithm)
+            double adjusted = zone.adjust_speed(speed);
+            if (adjusted != speed) {
+                // Re-clamp to volumetric limit to prevent under-extrusion.
+                // Resonance avoidance can boost speed above the filament's flow capacity,
+                // which would cause under-extrusion on external perimeters
+                // The volumetric limit is a hard constraint - we can boost as high as possible
+                // while staying within the extruder's physical limits.
+                speed = std::min(adjusted, volumetric_speed_limit);
+                break;  // Applied adjustment, exit loop
+            }
+        }
     }
 
     if (do_slowdown_by_height)

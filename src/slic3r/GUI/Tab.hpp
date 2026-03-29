@@ -42,6 +42,7 @@
 #include "Widgets/TextInput.hpp"
 #include "Widgets/SwitchButton.hpp"
 #include "UnsavedChangesDialog.hpp"
+#include "GUI_ResonanceZones.hpp"
 #include "DeviceCore/DevDefs.h"
 #include "DeviceCore/DevNozzleSystem.h"
 
@@ -618,6 +619,8 @@ private:
 	ogStaticText*	m_fff_print_host_upload_description_line {nullptr};
 	ogStaticText*	m_sla_print_host_upload_description_line {nullptr};
 
+    class ResonanceZones* m_resonance_zones {nullptr};
+
     std::vector<PageShp>			m_pages_fff;
     std::vector<PageShp>			m_pages_sla;
 
@@ -634,6 +637,8 @@ public:
 	std::string m_base_preset_model;
 
     PrinterTechnology               m_printer_technology = ptFFF;
+
+    ResonanceZones* get_resonance_zones() { return m_resonance_zones; }
 
 	//BBS: GUI refactor
     TabPrinter(ParamsPanel* parent) :

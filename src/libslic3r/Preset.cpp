@@ -1062,6 +1062,8 @@ static std::vector<std::string> s_Preset_machine_limits_options {
     "machine_max_speed_x", "machine_max_speed_y", "machine_max_speed_z", "machine_max_speed_e",
     "machine_min_extruding_rate", "machine_min_travel_rate",
     "machine_max_jerk_x", "machine_max_jerk_y", "machine_max_jerk_z", "machine_max_jerk_e",
+    // Resonance avoidance options
+    "resonance_avoidance", "resonance_avoidance_zones",
 };
 
 static std::vector<std::string> s_Preset_printer_options {
